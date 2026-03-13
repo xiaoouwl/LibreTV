@@ -2,7 +2,7 @@ const CUSTOMER_SITES = {
     ruyi: {
         api: 'https://cj.rycjapi.com/api.php/provide/vod',
         name: '如意资源',
-    }
+    },
     hongniu: {
         api: 'http://hongniuzy2.com/api.php/provide/vod/from/hnm3u8',
         name: '紅牛資源',
