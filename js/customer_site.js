@@ -303,7 +303,7 @@ const CUSTOMER_SITES = {
         api: 'https://www.kuaiyunzy.com/api.php/provide/vod/',
         name: '快云|点播',
     },
-        };
+};
 
 // 调用全局方法合并
 if (window.extendAPISites) {
