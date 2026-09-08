@@ -3,10 +3,10 @@ const CUSTOMER_SITES = {
         api: 'https://cj.rycjapi.com/api.php/provide/vod',
         name: '如意资源',
     },
-    dyttzy: {
-        api: 'http://caiji.dyttzyapi.com/api.php/provide/vod',
-        name: '电影天堂资源',
-    },
+    360: {
+        api: 'https://360zyzz.com/api.php/provide/vod',
+        name: '360资源',
+    }
 };
 // 调用全局方法合并
 if (window.extendAPISites) {
