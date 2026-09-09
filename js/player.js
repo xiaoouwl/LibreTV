@@ -804,41 +804,18 @@ function filterAdsFromM3U8(m3u8Content, strictMode = false) {
 
 
 // 显示错误
-//function showError(message) {
-    // 在视频已经播放的情况下不显示错误
-   // if (art && art.video && art.video.currentTime > 1) {
-       // return;
-   // }
-   // const loadingEl = document.getElementById('player-loading');
-   // if (loadingEl) loadingEl.style.display = 'none';
-   // const errorEl = document.getElementById('error');
-   // if (errorEl) errorEl.style.display = 'flex';
-   // const errorMsgEl = document.getElementById('error-message');
-   // if (errorMsgEl) errorMsgEl.textContent = message;
-   //}
 function showError(message) {
-    // 视频已经开始播放就不显示错误
+    // 在视频已经播放的情况下不显示错误
     if (art && art.video && art.video.currentTime > 1) {
         return;
     }
-    
     const loadingEl = document.getElementById('player-loading');
     if (loadingEl) loadingEl.style.display = 'none';
-    
     const errorEl = document.getElementById('error');
-    if (errorEl) {
-        errorEl.style.display = 'flex';
-        errorEl.innerHTML = `
-            <div class="error-icon">⚠️</div>
-            <div id="error-message">${message || '视频播放失败'}</div>
-            <div class="error-message-sub">请尝试其他视频源或稍后重试</div>
-            <button onclick="retryPlay()" 
-                    style="margin-top:16px;padding:10px 20px;background:#23ade5;color:white;border:none;border-radius:6px;font-size:15px;cursor:pointer;">
-                点击重试播放
-            </button>
-        `;
-    }
-}
+    if (errorEl) errorEl.style.display = 'flex';
+    const errorMsgEl = document.getElementById('error-message');
+    if (errorMsgEl) errorMsgEl.textContent = message;
+   }
 
 // 新增重试函数
 function retryPlay() {
