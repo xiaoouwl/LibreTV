@@ -31,7 +31,7 @@ const API_SITES = {
         api: 'https://api.xjzyapi.com/provide/vod',
         name: '小鸡资源',
         adult: true
-    }，
+    }
     //ARCHIVE https://telegra.ph/APIs-08-12
 };
 
