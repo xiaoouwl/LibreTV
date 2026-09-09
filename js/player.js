@@ -527,9 +527,49 @@ function initPlayer(videoUrl) {
                 video.disableRemotePlayback = false;
 
                 hls.on(Hls.Events.MANIFEST_PARSED, function () {
-                    video.play().catch(e => {
-                    });
+    // 尝试播放，失败自动重试（解决手机需要再点一次的问题）
+    const tryPlay = (retry = 0) => {
+        const playPromise = video.play();
+        
+        if (playPromise !== undefined) {
+            playPromise
+                .then(() => {
+                    // 播放成功
+                    document.getElementById('player-loading').style.display = 'none';
+                    document.getElementById('error').style.display = 'none';
+                })
+                .catch(err => {
+                    console.warn(`自动播放失败，第 ${retry + 1} 次重试`, err);
+                    
+                    if (retry < 3) {
+                        // 延迟后重试
+                        setTimeout(() => {
+                            tryPlay(retry + 1);
+                        }, 400 + retry * 300);
+                    } else {
+                        // 重试多次仍失败，显示可点击的提示
+                        document.getElementById('player-loading').style.display = 'none';
+                        
+                        const errorEl = document.getElementById('error');
+                        if (errorEl) {
+                            errorEl.style.display = 'flex';
+                            errorEl.innerHTML = `
+                                <div class="error-icon">⚠️</div>
+                                <div id="error-message">需要手动点击播放</div>
+                                <div class="error-message-sub">手机浏览器限制了自动播放</div>
+                                <button onclick="document.querySelector('#player video').play().catch(()=>{}); document.getElementById('error').style.display='none';"
+                                        style="margin-top:16px;padding:10px 24px;background:#23ade5;color:#fff;border:none;border-radius:6px;font-size:15px;cursor:pointer;">
+                                    点击播放
+                                </button>
+                            `;
+                        }
+                    }
                 });
+        }
+    };
+    
+    tryPlay();
+});
 
                 hls.on(Hls.Events.ERROR, function (event, data) {
                     // 增加错误计数
