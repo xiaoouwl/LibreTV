@@ -1027,3 +1027,30 @@ body {
         font-size: 0.8rem;
     }
 }
+/* 搜索框占位符渐变文字 */
+#searchInput::placeholder {
+    background: linear-gradient(90deg, #00ccff, #ff3c78, #00ccff);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    opacity: 1;
+    animation: placeholder-gradient 3s ease infinite;
+}
+
+/* 可选：让渐变流动起来 */
+@keyframes placeholder-gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* 兼容 Firefox */
+#searchInput::-moz-placeholder {
+    background: linear-gradient(90deg, #00ccff, #ff3c78);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    opacity: 1;
+}
