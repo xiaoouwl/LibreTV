@@ -845,3 +845,183 @@ function resetTagsToDefault() {
     
     showToast('已恢复默认标签', 'success');
 }
+// ==================== 标签切换 + 资源站最新更新 ====================
+
+let currentRecommendTab = 'douban'; // 当前选中的标签
+let sourcePage = 1;
+
+// 切换标签
+function switchRecommendTab(tab) {
+    currentRecommendTab = tab;
+    
+    const doubanBtn = document.getElementById('tab-douban');
+    const sourceBtn = document.getElementById('tab-source');
+    const doubanControls = document.getElementById('douban-controls');
+    const tagsContainer = document.getElementById('douban-tags');
+
+    if (tab === 'douban') {
+        // 高亮豆瓣按钮
+        if (doubanBtn) {
+            doubanBtn.className = 'px-4 py-1.5 rounded-full text-sm font-medium bg-pink-600 text-white transition';
+        }
+        if (sourceBtn) {
+            sourceBtn.className = 'px-4 py-1.5 rounded-full text-sm font-medium bg-[#222] text-gray-300 hover:bg-pink-700 hover:text-white transition';
+        }
+        
+        // 显示豆瓣控制区和标签
+        if (doubanControls) doubanControls.style.display = 'flex';
+        if (tagsContainer) tagsContainer.style.display = 'flex';
+        
+        // 加载豆瓣内容
+        if (typeof renderRecommend === 'function') {
+            renderRecommend(doubanCurrentTag, doubanPageSize, doubanPageStart);
+        }
+    } else {
+        // 高亮最新更新按钮
+        if (doubanBtn) {
+            doubanBtn.className = 'px-4 py-1.5 rounded-full text-sm font-medium bg-[#222] text-gray-300 hover:bg-pink-700 hover:text-white transition';
+        }
+        if (sourceBtn) {
+            sourceBtn.className = 'px-4 py-1.5 rounded-full text-sm font-medium bg-pink-600 text-white transition';
+        }
+        
+        // 隐藏豆瓣控制区和标签
+        if (doubanControls) doubanControls.style.display = 'none';
+        if (tagsContainer) tagsContainer.style.display = 'none';
+        
+        // 加载资源站最新
+        renderSourceRecommend(16);
+    }
+}
+
+// 资源站最新更新
+async function renderSourceRecommend(pageSize = 16) {
+    const container = document.getElementById("douban-results");
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="col-span-full text-center py-12">
+            <div class="w-6 h-6 border-2 border-pink-500 border-t-transparent rounded-full animate-spin inline-block"></div>
+            <span class="text-pink-500 ml-3">正在加载最新资源...</span>
+        </div>
+    `;
+
+    try {
+        if (!selectedAPIs || selectedAPIs.length === 0) {
+            container.innerHTML = `<div class="col-span-full text-center py-8 text-gray-400">请先在设置中勾选至少一个采集站</div>`;
+            return;
+        }
+
+        const apiId = selectedAPIs[0]; // 使用第一个勾选的源
+        let apiBaseUrl, apiName;
+
+        if (apiId.startsWith('custom_')) {
+            const custom = getCustomApiInfo(apiId.replace('custom_', ''));
+            if (!custom) throw new Error('自定义源无效');
+            apiBaseUrl = custom.url;
+            apiName = custom.name;
+        } else {
+            if (!API_SITES[apiId]) throw new Error('源不存在');
+            apiBaseUrl = API_SITES[apiId].api;
+            apiName = API_SITES[apiId].name;
+        }
+
+        // 请求最新列表（pg=1 通常是最新）
+        // 也可以改成：?ac=videolist&h=72  获取最近72小时更新
+        const apiUrl = `${apiBaseUrl}?ac=videolist&pg=${sourcePage}`;
+        
+        const proxiedUrl = window.ProxyAuth?.addAuthToProxyUrl
+            ? await window.ProxyAuth.addAuthToProxyUrl(PROXY_URL + encodeURIComponent(apiUrl))
+            : PROXY_URL + encodeURIComponent(apiUrl);
+
+        const res = await fetch(proxiedUrl, {
+            headers: API_CONFIG.search.headers
+        });
+        
+        if (!res.ok) throw new Error(`请求失败 ${res.status}`);
+
+        const data = await res.json();
+        const list = (data.list || []).slice(0, pageSize);
+
+        if (list.length === 0) {
+            container.innerHTML = `<div class="col-span-full text-center py-8 text-gray-400">该源暂无最新内容</div>`;
+            return;
+        }
+
+        // 渲染卡片
+        const fragment = document.createDocumentFragment();
+        
+        list.forEach(item => {
+            const card = document.createElement("div");
+            card.className = "bg-[#111] hover:bg-[#222] transition-all duration-300 rounded-lg overflow-hidden flex flex-col transform hover:scale-105 shadow-md hover:shadow-lg";
+
+            const safeName = (item.vod_name || '未知')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+                
+            const pic = (item.vod_pic && item.vod_pic.startsWith('http')) 
+                ? item.vod_pic 
+                : 'https://via.placeholder.com/300x450?text=无封面';
+                
+            const remarks = (item.vod_remarks || item.type_name || '更新')
+                .toString()
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+
+            card.innerHTML = `
+                <div class="relative w-full aspect-[2/3] overflow-hidden cursor-pointer"
+                     onclick="fillAndSearch('${safeName}')">
+                    <img src="${pic}" 
+                         alt="${safeName}"
+                         class="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                         loading="lazy"
+                         onerror="this.onerror=null; this.src='https://via.placeholder.com/300x450?text=无封面'">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-60"></div>
+                    <div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded-sm">
+                        ${remarks}
+                    </div>
+                    <div class="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">
+                        ${apiName}
+                    </div>
+                </div>
+                <div class="p-2 text-center bg-[#111]">
+                    <button onclick="fillAndSearch('${safeName}')"
+                            class="text-sm font-medium text-white truncate w-full hover:text-pink-400 transition"
+                            title="${safeName}">
+                        ${safeName}
+                    </button>
+                </div>
+            `;
+            fragment.appendChild(card);
+        });
+
+        container.innerHTML = "";
+        container.appendChild(fragment);
+
+    } catch (err) {
+        console.error('最新资源加载失败:', err);
+        container.innerHTML = `
+            <div class="col-span-full text-center py-8">
+                <div class="text-red-400">加载失败</div>
+                <div class="text-gray-500 text-sm mt-2">${err.message}</div>
+            </div>
+        `;
+    }
+}
+
+// 绑定事件
+document.addEventListener('DOMContentLoaded', function() {
+    const doubanBtn = document.getElementById('tab-douban');
+    const sourceBtn = document.getElementById('tab-source');
+
+    if (doubanBtn) {
+        doubanBtn.addEventListener('click', () => switchRecommendTab('douban'));
+    }
+    if (sourceBtn) {
+        sourceBtn.addEventListener('click', () => switchRecommendTab('source'));
+    }
+    
+    // 默认显示豆瓣
+    // switchRecommendTab('douban');
+});
