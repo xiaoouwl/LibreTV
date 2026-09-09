@@ -534,7 +534,7 @@ function renderDoubanCards(data, container) {
             
             // 2. 也准备代理URL作为备选
             const proxiedCoverUrl = PROXY_URL + encodeURIComponent(originalCoverUrl);
-            
+            const weservUrl = `https://images.weserv.nl/?url=${encodeURIComponent(originalCoverUrl.replace(/^https?:\/\//, ''))}`;
             // 为不同设备优化卡片布局
             card.innerHTML = `
                 <div class="relative w-full aspect-[2/3] overflow-hidden cursor-pointer" onclick="fillAndSearchWithDouban('${safeTitle}')">
