@@ -26,7 +26,7 @@ const API_SITES = {
         api: 'https://sex8zy.com/api.php/provide/vod',
         name: '杏吧资源',
         adult: true
-    }，
+    },
     xjzy: {
         api: 'https://api.xjzyapi.com/provide/vod',
         name: '小鸡资源',
