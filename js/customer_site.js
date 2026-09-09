@@ -10,10 +10,6 @@ const CUSTOMER_SITES = {
     huya: {
         api: 'https://www.huyaapi.com/api.php/provide/vod',
         name: '虎牙资源',
-    },
-    xingb: {
-        api: 'https://sex8zy.com/api.php/provide/vod',
-        name: '杏吧资源',
     }
 };
 // 调用全局方法合并
