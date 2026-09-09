@@ -6,6 +6,14 @@ const CUSTOMER_SITES = {
     360: {
         api: 'https://360zyzz.com/api.php/provide/vod',
         name: '360资源',
+    },
+    huya: {
+        api: 'https://www.huyaapi.com/api.php/provide/vod',
+        name: '虎牙资源',
+    },
+    xingb: {
+        api: 'https://sex8zy.com/api.php/provide/vod',
+        name: '杏吧资源',
     }
 };
 // 调用全局方法合并
