@@ -78,7 +78,7 @@ window.addEventListener('load', function () {
 // ============== PLAYER ==========
 // =================================
 // 全局变量
-let currentVideoTitle = '';
+let currenideoTitle = '';
 let currentEpisodeIndex = 0;
 let art = null; // 用于 ArtPlayer 实例
 let currentHls = null; // 跟踪当前HLS实例
@@ -218,7 +218,7 @@ function initializePageContent() {
     }
 
     // 设置页面标题
-    document.title = currentVideoTitle + ' - LibreTV播放器';
+    document.title = currentVideoTitle + ' - 小欧影视';
     document.getElementById('videoTitle').textContent = currentVideoTitle;
 
     // 初始化播放器
