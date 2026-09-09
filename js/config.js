@@ -23,10 +23,15 @@ const SITE_CONFIG = {
 // API站点配置
 const API_SITES = {
     testSource: {
-        api: 'https://cj.rycjapi.com/api.php/provide/vod',
-        name: '如意资源',
+        api: 'https://sex8zy.com/api.php/provide/vod',
+        name: '杏吧资源',
         adult: true
-    }
+    }，
+    xjzy: {
+        api: 'https://api.xjzyapi.com/provide/vod',
+        name: '小鸡资源',
+        adult: true
+    }，
     //ARCHIVE https://telegra.ph/APIs-08-12
 };
 
