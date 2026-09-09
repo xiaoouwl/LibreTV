@@ -528,34 +528,35 @@ function renderDoubanCards(data, container) {
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;');
             
-    // 处理图片URL
-const originalCoverUrl = item.cover;
-
-// 1. 本站代理（推荐优先）
-const proxiedCoverUrl = PROXY_URL + encodeURIComponent(originalCoverUrl);
-
-// 2. 第三方图片代理兜底
-const weservUrl = `https://images.weserv.nl/?url=${encodeURIComponent(originalCoverUrl.replace(/^https?:\/\//, ''))}`;
-
-// 为不同设备优化卡片布局
-card.innerHTML = `
-    <div class="relative w-full aspect-[2/3] overflow-hidden cursor-pointer" onclick="fillAndSearchWithDouban('${safeTitle}')">
-        <img src="${proxiedCoverUrl}" 
-             alt="${safeTitle}" 
-             class="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-             onerror="this.onerror=null; this.src='${weservUrl}'; this.classList.add('object-contain');"
-             loading="lazy" 
-             referrerpolicy="no-referrer">
-        <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-60"></div>
-        <div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded-sm">
-            <span class="text-yellow-400">★</span> ${safeRate}
-        </div>
-        <div class="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-sm hover:bg-[#333] transition-colors">
-            <a href="${item.url}" target="_blank" rel="noopener noreferrer" title="在豆瓣查看" onclick="event.stopPropagation();">
-                🔗
-            </a>
-        </div>
-    </div>
+            // 生成唯一图片ID，方便后面异步替换
+            const imgId = `douban-cover-${item.id || Math.random().toString(36).slice(2, 11)}`;
+            
+            // 占位图（先显示这个，后面换成采集站图片）
+            const placeholder = `https://via.placeholder.com/300x450/111111/666666?text=${encodeURIComponent(safeTitle.substring(0, 8))}`;
+            
+            // 豆瓣原图和代理（作为最后兜底）
+            const originalCoverUrl = item.cover || '';
+            const proxiedCoverUrl = originalCoverUrl ? (PROXY_URL + encodeURIComponent(originalCoverUrl)) : '';
+            
+            // 卡片HTML
+            card.innerHTML = `
+                <div class="relative w-full aspect-[2/3] overflow-hidden cursor-pointer" onclick="fillAndSearchWithDouban('${safeTitle}')">
+                    <img id="${imgId}" 
+                         src="${placeholder}" 
+                         alt="${safeTitle}" 
+                         class="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                         loading="lazy"
+                         referrerpolicy="no-referrer">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-60"></div>
+                    <div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded-sm">
+                        <span class="text-yellow-400">★</span> ${safeRate}
+                    </div>
+                    <div class="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-sm hover:bg-[#333] transition-colors">
+                        <a href="${item.url}" target="_blank" rel="noopener noreferrer" title="在豆瓣查看" onclick="event.stopPropagation();">
+                            🔗
+                        </a>
+                    </div>
+                </div>
                 <div class="p-2 text-center bg-[#111]">
                     <button onclick="fillAndSearchWithDouban('${safeTitle}')" 
                             class="text-sm font-medium text-white truncate w-full hover:text-pink-400 transition"
@@ -566,6 +567,56 @@ card.innerHTML = `
             `;
             
             fragment.appendChild(card);
+            
+            // ========== 异步用采集站图片替换封面 ==========
+            (async () => {
+                try {
+                    // 没有选中任何采集站就跳过
+                    if (typeof selectedAPIs === 'undefined' || !selectedAPIs || selectedAPIs.length === 0) {
+                        // 回退到豆瓣代理
+                        const imgEl = document.getElementById(imgId);
+                        if (imgEl && proxiedCoverUrl) imgEl.src = proxiedCoverUrl;
+                        return;
+                    }
+                    
+                    // 用当前选中的第一个源去搜索
+                    const apiId = selectedAPIs[0];
+                    const results = await searchByAPIAndKeyWord(apiId, item.title);
+                    
+                    if (results && results.length > 0) {
+                        // 优先找标题完全匹配的
+                        let best = results.find(r => r.vod_name && r.vod_name.trim() === item.title.trim());
+                        if (!best) best = results[0];   // 没有完全匹配就用第一个
+                        
+                        if (best && best.vod_pic && best.vod_pic.startsWith('http')) {
+                            const imgEl = document.getElementById(imgId);
+                            if (imgEl) {
+                                // 直接用采集站图片（大部分采集站图片不防盗链）
+                                imgEl.src = best.vod_pic;
+                                
+                                // 如果采集站图片也加载失败，再回退到豆瓣代理
+                                imgEl.onerror = function() {
+                                    this.onerror = null;
+                                    if (proxiedCoverUrl) this.src = proxiedCoverUrl;
+                                    else this.src = placeholder;
+                                };
+                            }
+                        }
+                    } else {
+                        // 搜索不到结果，回退到豆瓣代理
+                        const imgEl = document.getElementById(imgId);
+                        if (imgEl && proxiedCoverUrl) imgEl.src = proxiedCoverUrl;
+                    }
+                } catch (e) {
+                    console.warn(`[豆瓣卡片] 获取采集站封面失败 (${safeTitle}):`, e);
+                    // 出错时回退到豆瓣代理
+                    const imgEl = document.getElementById(imgId);
+                    if (imgEl && proxiedCoverUrl) {
+                        imgEl.src = proxiedCoverUrl;
+                    }
+                }
+            })();
+            // ========== 异步替换结束 ==========
         });
     }
     
@@ -573,7 +624,6 @@ card.innerHTML = `
     container.innerHTML = "";
     container.appendChild(fragment);
 }
-
 // 重置到首页
 function resetToHome() {
     resetSearchArea();
